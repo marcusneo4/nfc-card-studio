@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#11120f" />
+    <meta name="description" content="Design a print-ready NFC card and the contact payload people receive when they tap." />
+    <title>Card Atelier — NFC Card Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&family=Manrope:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <a class="skip-link" href="#viewport">Skip to card canvas</a>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <button id="sidebar-toggle" class="icon-button menu-toggle" type="button" aria-expanded="true" aria-controls="sidebar" aria-label="Toggle design studio">
+            <span class="menu-glyph" aria-hidden="true"><i></i><i></i><i></i></span>
+          </button>
+          <div class="brand-mark" aria-hidden="true">CA</div>
+          <div class="brand-copy">
+            <strong id="project-name">Untitled card</strong>
+            <span id="save-indicator">Saved locally</span>
+          </div>
+          <div class="project-wrap">
+            <button id="project-toggle" class="compact-button square" type="button" aria-expanded="false" aria-controls="project-menu" aria-label="Project menu">···</button>
+            <div id="project-menu" class="export-menu hidden" role="menu">
+              <p>Project</p>
+              <button class="menu-item" type="button" role="menuitem" data-project="rename">Rename card</button>
+              <button class="menu-item" type="button" role="menuitem" data-project="new">New card</button>
+              <button class="menu-item" type="button" role="menuitem" data-project="library">My cards</button>
+              <button class="menu-item" type="button" role="menuitem" data-project="import">Import design</button>
+              <button class="menu-item" type="button" role="menuitem" data-project="export">Export design JSON</button>
+              <button class="menu-item" type="button" role="menuitem" data-project="shortcuts">Keyboard shortcuts</button>
+            </div>
+          </div>
+          <input id="document-input" class="sr-only" type="file" accept="application/json,.json" />
+        </div>
+
+        <div class="topbar-center">
+          <div class="segmented-control history-controls" role="group" aria-label="Edit history">
+            <button id="undo-action" class="compact-button" type="button" disabled aria-label="Undo">↶ <span>Undo</span></button>
+            <button id="redo-action" class="compact-button" type="button" disabled aria-label="Redo">↷ <span>Redo</span></button>
+          </div>
+          <div class="segmented-control" role="group" aria-label="Card face">
+            <button id="face-front" class="compact-button" type="button" aria-pressed="true">Front</button>
+            <button id="face-back" class="compact-button" type="button" aria-pressed="false">Back</button>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="pan-toggle" class="compact-button" type="button" aria-pressed="false" aria-label="Toggle canvas pan mode">✥ <span>Pan</span></button>
+          <div class="zoom-cluster" role="group" aria-label="Canvas zoom">
+            <button id="zoom-out" class="compact-button square" type="button" aria-label="Zoom out">−</button>
+            <span id="zoom-label">100%</span>
+            <button id="zoom-in" class="compact-button square" type="button" aria-label="Zoom in">+</button>
+            <button id="zoom-reset" class="compact-button" type="button">Fit</button>
+          </div>
+          <div class="export-wrap">
+            <button id="export-toggle" class="export-button" type="button" aria-expanded="false" aria-controls="export-menu">Export <span aria-hidden="true">↗</span></button>
+            <div id="export-menu" class="export-menu hidden" role="menu">
+              <p>Print + tap payload</p>
+              <p id="print-check" class="print-check" hidden></p>
+              <button class="menu-item" type="button" role="menuitem" data-export="preview">Preview both sides</button>
+              <button class="menu-item" type="button" role="menuitem" data-export="download-current">Download this side</button>
+              <button class="menu-item" type="button" role="menuitem" data-export="share-current">Share this side</button>
+              <button class="menu-item" type="button" role="menuitem" data-export="download-both">Download print sheet</button>
+              <button class="menu-item" type="button" role="menuitem" data-export="share-both">Share both sides</button>
+              <button class="menu-item" type="button" role="menuitem" data-export="vcard">Download contact card</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close design studio" hidden></button>
+        <aside id="sidebar" class="studio-panel" data-open="true" data-active-tab="add" aria-label="Design studio">
+          <div class="panel-heading">
+            <div>
+            <span class="eyebrow">NFC studio</span>
+            <h1>Create your card</h1>
+            </div>
+            <span id="selection-label" class="selection-pill">Nothing selected</span>
+          </div>
+
+          <nav class="tool-tabs" aria-label="Design tool categories">
+            <button type="button" data-tool-tab="you" aria-selected="false">You</button>
+            <button type="button" data-tool-tab="add" aria-selected="true">Add</button>
+            <button type="button" data-tool-tab="type" aria-selected="false">Type</button>
+            <button type="button" data-tool-tab="style" aria-selected="false">Style</button>
+            <button type="button" data-tool-tab="arrange" aria-selected="false">Arrange</button>
+          </nav>
+
+          <div class="panel-scroll">
+            <section class="tool-panel" data-tool-panel="you" hidden>
+              <div class="section-heading"><h2>Your details</h2><span>Print + tap</span></div>
+              <p class="panel-lede">This identity is what the card prints and what a tap saves. Update both sides after you change it. That also refreshes a QR already on the card.</p>
+              <label class="field-label" for="profile-name">Full name<input id="profile-name" type="text" autocomplete="name" placeholder="Alex Morgan" /></label>
+              <div class="control-row">
+                <label class="field-label" for="profile-title">Title<input id="profile-title" type="text" autocomplete="organization-title" placeholder="Creative Director" /></label>
+                <label class="field-label" for="profile-company">Company<input id="profile-company" type="text" autocomplete="organization" placeholder="Studio" /></label>
+              </div>
+              <label class="field-label" for="profile-email">Email<input id="profile-email" type="email" autocomplete="email" placeholder="alex@studio.sg" /></label>
+              <label class="field-label" for="profile-phone">Phone<input id="profile-phone" type="tel" autocomplete="tel" placeholder="+65 8123 4567" /></label>
+              <label class="field-label" for="profile-website">Website<input id="profile-website" type="url" autocomplete="url" placeholder="studio.sg" /></label>
+              <label class="field-label" for="profile-linkedin">LinkedIn<input id="profile-linkedin" type="url" placeholder="linkedin.com/in/you" /></label>
+              <label class="field-label" for="profile-instagram">Instagram<input id="profile-instagram" type="url" placeholder="instagram.com/you" /></label>
+              <div class="section-heading"><h2>QR encodes</h2></div>
+              <div class="segmented-control full" role="radiogroup" aria-label="QR payload">
+                <button class="compact-button" type="button" data-qr-mode="vcard" aria-pressed="true">Contact card</button>
+                <button class="compact-button" type="button" data-qr-mode="website" aria-pressed="false">Website</button>
+              </div>
+              <p id="qr-health" class="payload-fit"></p>
+              <div class="action-grid two profile-actions">
+                <button id="apply-profile" class="secondary-button" type="button">Update both sides</button>
+                <button id="add-qr" class="secondary-button" type="button">Add / refresh QR</button>
+                <button id="preview-tap" class="secondary-button" type="button">Preview tap</button>
+                <button id="download-vcard" class="secondary-button" type="button">Download .vcf</button>
+              </div>
+              <div class="section-heading"><h2>Write the chip</h2><span id="payload-size">0 bytes</span></div>
+              <p class="panel-lede">Paste this into an NFC writer as the same record the QR encodes. Contact mode is a vCard. Website mode is a link.</p>
+              <pre id="payload-preview" class="payload-preview" tabindex="0">Add a name, email, or phone to build the chip payload.</pre>
+              <p id="payload-fit" class="payload-fit"></p>
+              <button id="copy-payload" class="secondary-button payload-copy" type="button">Copy chip payload</button>
+            </section>
+
+            <section class="tool-panel" data-tool-panel="add">
+              <div class="section-heading"><h2>Quick start</h2><span>Curated layouts</span></div>
+              <div class="template-list">
+                <button class="template-card template-editorial" type="button" data-template="editorial"><span>Editorial</span><i>Elegant type</i></button>
+                <button class="template-card template-signal" type="button" data-template="signal"><span>Signal</span><i>Bold contrast</i></button>
+                <button class="template-card template-minimal" type="button" data-template="minimal"><span>Minimal</span><i>Quiet confidence</i></button>
+                <button class="template-card template-orchid" type="button" data-template="orchid"><span>Orchid</span><i>Creative profile</i></button>
+                <button class="template-card template-luxe" type="button" data-template="luxe"><span>Luxe</span><i>Refined classic</i></button>
+                <button class="template-card template-grid" type="button" data-template="grid"><span>Grid</span><i>Tech forward</i></button>
+                <button class="template-card template-studio" type="button" data-template="studio"><span>Studio</span><i>Bright & bold</i></button>
+                <button class="template-card template-monogram" type="button" data-template="monogram"><span>Monogram</span><i>Personal mark</i></button>
+              </div>
+
+              <div class="section-heading"><h2>Add elements</h2><span>Tap to place</span></div>
+              <div class="tool-grid">
+                <button id="add-text" class="tool-button" type="button"><b>T</b><span>Text</span></button>
+                <button id="add-name" class="tool-button" type="button"><b>Nm</b><span>Name</span></button>
+                <button id="add-title" class="tool-button" type="button"><b>Tl</b><span>Title</span></button>
+                <button id="add-email" class="tool-button" type="button"><b>@</b><span>Email</span></button>
+                <button id="add-phone" class="tool-button" type="button"><b>Ph</b><span>Phone</span></button>
+                <button id="add-qr-tool" class="tool-button" type="button"><b>QR</b><span>QR code</span></button>
+                <button id="add-rect" class="tool-button" type="button"><b>□</b><span>Rectangle</span></button>
+                <button id="add-ellipse" class="tool-button" type="button"><b>○</b><span>Ellipse</span></button>
+                <button id="add-logo" class="tool-button" type="button"><b>Lg</b><span>Logo</span></button>
+                <button id="add-image" class="tool-button" type="button"><b>Im</b><span>Image</span></button>
+                <button id="set-background" class="tool-button" type="button"><b>▧</b><span>Photo fill</span></button>
+                <button id="add-icon-phone" class="tool-button" type="button"><b>☎</b><span>Phone icon</span></button>
+                <button id="add-icon-email" class="tool-button" type="button"><b>@</b><span>Email icon</span></button>
+                <button id="add-icon-web" class="tool-button" type="button"><b>◎</b><span>Web icon</span></button>
+              </div>
+              <button id="image-dropzone" class="dropzone" type="button">
+                <strong>Drop an image here</strong>
+                <span>PNG, JPG, WebP, or SVG</span>
+              </button>
+              <input id="logo-input" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+              <input id="image-input" class="sr-only" type="file" accept="image/*" />
+              <input id="background-input" class="sr-only" type="file" accept="image/*" />
+            </section>
+
+            <section class="tool-panel" data-tool-panel="type" hidden>
+              <div id="type-empty" class="empty-inspector"><b>Aa</b><h2>Select text to style it</h2><p>Add a text element or select one on the card.</p></div>
+              <div id="type-controls">
+                <label class="field-label" for="text-content">Card text<textarea id="text-content" rows="3" placeholder="Type here or double-click the card"></textarea></label>
+                <label class="field-label" for="text-role">NFC field<select id="text-role">
+                  <option value="">Unlinked text</option>
+                  <option value="name">Name</option>
+                  <option value="title">Title</option>
+                  <option value="company">Company</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone</option>
+                  <option value="website">Website</option>
+                  <option value="contactPair">Email + phone</option>
+                  <option value="monogram">Monogram</option>
+                </select></label>
+                <label class="field-label" for="font-select">Typeface<select id="font-select"></select></label>
+                <div class="control-row">
+                  <label class="field-label" for="font-size">Size<input id="font-size" type="number" min="8" max="300" step="1" value="64" /></label>
+                  <label class="field-label" for="font-weight">Weight<select id="font-weight"><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semibold</option><option value="700">Bold</option></select></label>
+                </div>
+                <div class="section-heading"><h2>Alignment</h2></div>
+                <div class="segmented-control full" role="group" aria-label="Text alignment">
+                  <button class="compact-button" type="button" data-text-align="left" aria-pressed="true">Left</button>
+                  <button class="compact-button" type="button" data-text-align="center" aria-pressed="false">Center</button>
+                  <button class="compact-button" type="button" data-text-align="right" aria-pressed="false">Right</button>
+                </div>
+                <button id="italic-toggle" class="secondary-button" type="button" aria-pressed="false">Italic</button>
+                <label class="range-label" for="char-spacing"><span>Letter spacing <output id="char-spacing-value">0</output></span><input id="char-spacing" type="range" min="-100" max="500" step="10" value="0" /></label>
+                <label class="range-label" for="line-height"><span>Line height <output id="line-height-value">1.00</output></span><input id="line-height" type="range" min="70" max="200" step="5" value="100" /></label>
+              </div>
+            </section>
+
+            <section class="tool-panel" data-tool-panel="style" hidden>
+              <div class="section-heading"><h2>Object color</h2><span>Selection</span></div>
+              <div class="color-control">
+                <label for="color-input">Custom<input id="color-input" type="color" value="#1a1a1a" /></label>
+                <div id="color-presets" class="swatch-grid" role="group" aria-label="Color presets"></div>
+              </div>
+              <label class="range-label" for="opacity-input"><span>Opacity <output id="opacity-value">100%</output></span><input id="opacity-input" type="range" min="5" max="100" step="1" value="100" /></label>
+              <section id="stroke-section" hidden>
+                <div class="section-heading"><h2>Stroke</h2><span>Shapes</span></div>
+                <div class="background-control">
+                  <input id="stroke-color" type="color" value="#1a1a1a" aria-label="Stroke color" />
+                  <label class="field-label" for="stroke-width">Width<input id="stroke-width" type="number" min="0" max="40" step="1" value="0" /></label>
+                </div>
+                <label class="range-label" for="corner-radius" id="corner-radius-row" hidden><span>Corner radius <output id="corner-radius-value">12</output></span><input id="corner-radius" type="range" min="0" max="80" step="1" value="12" /></label>
+              </section>
+              <section id="image-scale-section" hidden>
+                <label class="range-label" for="image-scale"><span>Image zoom <output id="image-scale-value">100%</output></span><input id="image-scale" type="range" min="10" max="400" step="1" value="100" /></label>
+              </section>
+              <div class="section-heading"><h2>Card background</h2><span>Active side</span></div>
+              <div class="background-control">
+                <input id="background-color" type="color" value="#f3efe6" aria-label="Card background color" />
+                <button id="clear-background-image" class="secondary-button" type="button">Use solid color</button>
+              </div>
+              <label class="range-label" for="fill-zoom-side"><span>Photo fill zoom <output id="fill-zoom-side-value">Add fill</output></span><input id="fill-zoom-side" type="range" min="50" max="300" step="1" value="100" disabled /></label>
+            </section>
+
+            <section class="tool-panel" data-tool-panel="arrange" hidden>
+              <div class="section-heading"><h2>Layers</h2><span>Top first</span></div>
+              <div id="layer-list" class="layer-list" role="list"></div>
+              <div id="arrange-empty" class="empty-inspector"><b>◇</b><h2>Select an object</h2><p>Arrange, align, duplicate, or lock any card element.</p></div>
+              <div id="arrange-controls">
+                <div class="section-heading"><h2>Actions</h2></div>
+                <div class="action-grid">
+                  <button id="duplicate-object" class="secondary-button" type="button">Duplicate</button>
+                  <button id="delete-object" class="secondary-button danger" type="button">Delete</button>
+                  <button id="lock-object" class="secondary-button" type="button" aria-pressed="false">Lock</button>
+                </div>
+                <div class="section-heading"><h2>Layer</h2></div>
+                <div class="action-grid two layer-actions">
+                  <button id="bring-front" class="secondary-button" type="button">To front</button>
+                  <button id="bring-forward" class="secondary-button" type="button">Forward</button>
+                  <button id="send-backward" class="secondary-button" type="button">Backward</button>
+                  <button id="send-back" class="secondary-button" type="button">To back</button>
+                </div>
+                <div class="section-heading"><h2>Transform</h2><span>Canvas pixels</span></div>
+                <div class="transform-grid">
+                  <label for="transform-x">X<input id="transform-x" data-transform="x" type="number" step="1" /></label>
+                  <label for="transform-y">Y<input id="transform-y" data-transform="y" type="number" step="1" /></label>
+                  <label for="transform-width">Width<input id="transform-width" data-transform="width" type="number" min="1" step="1" /></label>
+                  <label for="transform-height">Height<input id="transform-height" data-transform="height" type="number" min="1" step="1" /></label>
+                  <label class="rotation-field" for="transform-angle">Rotation<input id="transform-angle" data-transform="angle" type="number" min="-360" max="360" step="1" /></label>
+                </div>
+                <label class="inline-check" for="aspect-lock"><input id="aspect-lock" type="checkbox" checked /> Lock proportions</label>
+                <div class="action-grid two">
+                  <button id="flip-horizontal" class="secondary-button" type="button">Flip horizontal</button>
+                  <button id="flip-vertical" class="secondary-button" type="button">Flip vertical</button>
+                </div>
+                <div class="section-heading"><h2>Align to card</h2></div>
+                <div class="alignment-grid" role="group" aria-label="Align selection to card">
+                  <button type="button" data-align-object="left" aria-label="Align left">⇤</button>
+                  <button type="button" data-align-object="center" aria-label="Align horizontal center">↔</button>
+                  <button type="button" data-align-object="right" aria-label="Align right">⇥</button>
+                  <button type="button" data-align-object="top" aria-label="Align top">↥</button>
+                  <button type="button" data-align-object="middle" aria-label="Align vertical center">↕</button>
+                  <button type="button" data-align-object="bottom" aria-label="Align bottom">↧</button>
+                </div>
+                <div class="section-heading"><h2>Precision move</h2><span>Shift = 10 px</span></div>
+                <div id="nudge-pad" class="nudge-pad">
+                  <span></span><button type="button" data-nudge="0,-1" aria-label="Nudge up">↑</button><span></span>
+                  <button type="button" data-nudge="-1,0" aria-label="Nudge left">←</button>
+                  <button id="nudge-step" type="button" aria-pressed="false" aria-label="Use 10 pixel nudge">1 px</button>
+                  <button type="button" data-nudge="1,0" aria-label="Nudge right">→</button>
+                  <span></span><button type="button" data-nudge="0,1" aria-label="Nudge down">↓</button><span></span>
+                </div>
+              </div>
+              <div class="view-options">
+                <label for="guides-toggle"><input id="guides-toggle" type="checkbox" checked /> Show 3 mm safe area</label>
+                <p>The dashed line marks the safe area, not the card edge. The full canvas is exactly 85.60 × 53.98 mm.</p>
+              </div>
+            </section>
+          </div>
+          <div class="mobile-drag-handle" aria-hidden="true"></div>
+        </aside>
+
+        <main id="viewport" aria-label="Card design workspace">
+          <div class="canvas-atmosphere" aria-hidden="true"></div>
+          <div id="face-rail" class="face-rail" role="group" aria-label="Card faces">
+            <button type="button" data-face-thumb="front" aria-pressed="true" aria-label="Show front face">
+              <img id="thumb-front" alt="" width="86" height="54" />
+              <span>Front</span>
+            </button>
+            <button type="button" data-face-thumb="back" aria-pressed="false" aria-label="Show back face">
+              <img id="thumb-back" alt="" width="86" height="54" />
+              <span>Back</span>
+            </button>
+          </div>
+          <div class="canvas-meta top-left"><span id="face-label">Front face</span><b>85.60 × 53.98 mm</b></div>
+          <div class="canvas-meta bottom-right"><span>Print ready</span><b>300 DPI</b></div>
+          <div id="empty-canvas" class="empty-canvas" hidden>
+            <span class="eyebrow">New NFC card</span>
+            <h2>Start with your details</h2>
+            <p>The print design and the tap contact should say the same thing. Add your identity, then pick a layout.</p>
+            <div class="empty-canvas-actions">
+              <button id="empty-open-you" class="export-button" type="button">Add your details</button>
+              <button id="empty-open-add" class="secondary-button" type="button">Browse templates</button>
+            </div>
+          </div>
+          <div id="stage">
+            <canvas id="card-canvas" aria-label="Editable business card canvas, 85.60 by 53.98 millimeters"></canvas>
+            <div id="safe-guide" aria-hidden="true"><span>3 mm safe area</span></div>
+            <div id="guide-x" class="alignment-guide vertical" hidden aria-hidden="true"></div>
+            <div id="guide-y" class="alignment-guide horizontal" hidden aria-hidden="true"></div>
+          </div>
+          <output id="rotation-badge" class="rotation-badge" hidden>0°</output>
+          <div id="canvas-tools" class="canvas-tools" aria-label="Card tools">
+            <div class="canvas-tool-row">
+              <button id="preview-flip" class="canvas-secondary" type="button">Preview card</button>
+              <button id="remove-background" class="canvas-primary" type="button" data-when="image" hidden>
+                <span aria-hidden="true">✦</span>
+                Remove background
+              </button>
+              <button id="crop-image" class="canvas-secondary" type="button" data-when="image" hidden>Crop</button>
+            </div>
+            <div id="background-removal-progress" class="canvas-progress" hidden>
+              <progress id="background-removal-meter" max="100" value="0"></progress>
+              <span id="background-removal-label">Preparing…</span>
+            </div>
+            <div id="image-zoom-row" class="canvas-slider-row" data-when="image" hidden>
+              <span>Image zoom</span>
+              <button id="image-zoom-out" type="button" aria-label="Zoom selected image out">−</button>
+              <input id="canvas-image-scale" type="range" min="10" max="400" step="1" value="100" aria-label="Selected image zoom" />
+              <button id="image-zoom-in" type="button" aria-label="Zoom selected image in">+</button>
+              <output id="canvas-image-scale-value">100%</output>
+            </div>
+            <div id="fill-zoom-row" class="canvas-slider-row" data-when="fill" hidden>
+              <span>Photo fill</span>
+              <button id="fill-zoom-out" type="button" aria-label="Zoom photo fill out">−</button>
+              <input id="fill-zoom" type="range" min="50" max="300" step="1" value="100" aria-label="Photo fill zoom" disabled />
+              <button id="fill-zoom-in" type="button" aria-label="Zoom photo fill in">+</button>
+              <output id="fill-zoom-value">Add fill</output>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <p id="status" class="status-toast hidden" role="status" aria-live="polite"></p>
+    </div>
+
+    <dialog id="crop-dialog" class="crop-dialog">
+      <span class="eyebrow">Image</span>
+      <h2>Crop</h2>
+      <p>Drag the frame to choose what stays. Pull an edge or corner to resize it.</p>
+      <div id="crop-stage" class="crop-stage">
+        <img id="crop-source" alt="" draggable="false" />
+        <div id="crop-frame" class="crop-frame">
+          <button class="crop-handle" type="button" data-crop-handle="nw" aria-label="Resize from top left"></button>
+          <button class="crop-handle" type="button" data-crop-handle="n" aria-label="Resize from top"></button>
+          <button class="crop-handle" type="button" data-crop-handle="ne" aria-label="Resize from top right"></button>
+          <button class="crop-handle" type="button" data-crop-handle="e" aria-label="Resize from right"></button>
+          <button class="crop-handle" type="button" data-crop-handle="se" aria-label="Resize from bottom right"></button>
+          <button class="crop-handle" type="button" data-crop-handle="s" aria-label="Resize from bottom"></button>
+          <button class="crop-handle" type="button" data-crop-handle="sw" aria-label="Resize from bottom left"></button>
+          <button class="crop-handle" type="button" data-crop-handle="w" aria-label="Resize from left"></button>
+        </div>
+      </div>
+      <div class="crop-actions">
+        <button id="crop-reset" class="secondary-button" type="button">Reset</button>
+        <button id="crop-cancel" class="secondary-button" type="button">Cancel</button>
+        <button id="crop-apply" class="export-button" type="button">Apply crop</button>
+      </div>
+    </dialog>
+
+    <dialog id="share-dialog" class="share-dialog">
+      <span class="eyebrow">Your artwork</span>
+      <h2 id="share-title">Save card image</h2>
+      <p>This browser cannot open the share sheet. Long-press an image to save it, or use the download button.</p>
+      <div id="share-previews"></div>
+      <button id="share-close" class="export-button" type="button">Close</button>
+    </dialog>
+
+    <dialog id="app-dialog" class="app-dialog">
+      <span class="eyebrow" id="app-dialog-eyebrow">Confirm</span>
+      <h2 id="app-dialog-title">Confirm</h2>
+      <p id="app-dialog-copy"></p>
+      <label id="app-dialog-field" class="field-label" hidden for="app-dialog-input">Name<input id="app-dialog-input" type="text" /></label>
+      <div class="dialog-actions">
+        <button id="app-dialog-cancel" class="secondary-button" type="button">Cancel</button>
+        <button id="app-dialog-alt" class="secondary-button" type="button" hidden>Other</button>
+        <button id="app-dialog-confirm" class="export-button" type="button">Confirm</button>
+      </div>
+    </dialog>
+
+    <dialog id="onboarding-dialog" class="onboard-dialog">
+      <form id="onboarding-form">
+        <section data-onboard-step>
+          <span class="eyebrow">Card Atelier</span>
+          <h2>A card people can tap</h2>
+          <p>Design the printed CR80 card and the contact they receive in one studio. Your details drive the layout, the QR, and the digital preview.</p>
+        </section>
+        <section data-onboard-step hidden>
+          <span class="eyebrow">Your identity</span>
+          <h2>Who should the tap save?</h2>
+          <label class="field-label" for="onboard-name">Full name<input id="onboard-name" type="text" autocomplete="name" required /></label>
+          <label class="field-label" for="onboard-title">Title<input id="onboard-title" type="text" /></label>
+          <label class="field-label" for="onboard-company">Company<input id="onboard-company" type="text" /></label>
+          <label class="field-label" for="onboard-email">Email<input id="onboard-email" type="email" autocomplete="email" /></label>
+          <label class="field-label" for="onboard-phone">Phone<input id="onboard-phone" type="tel" autocomplete="tel" /></label>
+          <label class="field-label" for="onboard-website">Website<input id="onboard-website" type="url" /></label>
+        </section>
+        <section data-onboard-step hidden>
+          <span class="eyebrow">Look</span>
+          <h2>Pick a starting layout</h2>
+          <p>We fill it with your details and add a matching tap-and-QR back.</p>
+          <div id="onboarding-templates" class="template-list"></div>
+        </section>
+        <div class="dialog-actions">
+          <button id="onboarding-back" class="secondary-button" type="button">Skip for now</button>
+          <button id="onboarding-next" class="export-button" type="button">Continue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="tap-dialog" class="tap-dialog">
+      <span class="eyebrow">Tap preview</span>
+      <h2>What they receive</h2>
+      <p>This is the digital card a phone would open. The printed QR encodes the same contact.</p>
+      <div class="phone-frame" aria-label="Digital NFC card preview">
+        <div class="phone-notch" aria-hidden="true"></div>
+        <div class="tap-card">
+          <div id="tap-initials" class="tap-avatar">CA</div>
+          <strong id="tap-name">Your name</strong>
+          <span id="tap-role">Title</span>
+          <span id="tap-company">Company</span>
+          <div id="tap-actions" class="tap-actions"></div>
+        </div>
+      </div>
+      <button id="tap-close" class="export-button" type="button">Close</button>
+    </dialog>
+
+    <dialog id="flip-dialog" class="flip-dialog">
+      <span class="eyebrow">Print preview</span>
+      <h2>Front and back</h2>
+      <div class="flip-stage">
+        <div id="flip-card" class="flip-card">
+          <div class="flip-face flip-face-front">
+            <img id="flip-front" alt="Card front" />
+          </div>
+          <div class="flip-face flip-face-back">
+            <img id="flip-back" alt="Card back" />
+          </div>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button id="flip-toggle" class="secondary-button" type="button">Show back</button>
+        <button id="flip-close" class="export-button" type="button">Close</button>
+      </div>
+    </dialog>
+
+    <dialog id="library-dialog" class="app-dialog">
+      <span class="eyebrow">Project</span>
+      <h2>My cards</h2>
+      <p>Cards stay on this device. Starting a new card, or opening another one, keeps the design you leave.</p>
+      <p id="library-empty" class="panel-lede">No other cards yet. Start a new card and this one is kept here.</p>
+      <div id="library-list" class="library-list"></div>
+      <button id="library-close" class="export-button" type="button">Close</button>
+    </dialog>
+
+    <dialog id="shortcuts-dialog" class="app-dialog">
+      <span class="eyebrow">Studio</span>
+      <h2>Keyboard shortcuts</h2>
+      <dl class="shortcut-list">
+        <div><dt>Ctrl / ⌘ Z</dt><dd>Undo</dd></div>
+        <div><dt>Ctrl / ⌘ Y</dt><dd>Redo</dd></div>
+        <div><dt>Ctrl / ⌘ D</dt><dd>Duplicate</dd></div>
+        <div><dt>Ctrl / ⌘ C / V</dt><dd>Copy / paste</dd></div>
+        <div><dt>Delete</dt><dd>Remove selection</dd></div>
+        <div><dt>[ / ]</dt><dd>Front / back</dd></div>
+        <div><dt>Arrows</dt><dd>Nudge 1 px</dd></div>
+        <div><dt>Shift + arrows</dt><dd>Nudge 10 px</dd></div>
+        <div><dt>?</dt><dd>This list</dd></div>
+      </dl>
+      <button id="shortcuts-close" class="export-button" type="button">Close</button>
+    </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
